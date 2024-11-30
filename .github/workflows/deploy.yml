@@ -5,8 +5,11 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,12 +26,17 @@ jobs:
         pip install -r requirements.txt
         pip install frozen-flask
 
-    - name: Build static site
+    - name: Create static folder
+      run: mkdir -p build
+
+    - name: Copy static assets
       run: |
-        python freeze.py
+        cp -r static build/
+        cp -r templates build/
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./build
+        force_orphan: true
