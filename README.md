@@ -1,7 +1,7 @@
 # Gantt Project Solver
 
 ## Overview
-This is a web application developed by ENSAM Meknes students that helps solve and visualize Gantt chart scheduling problems using Mixed Integer Linear Programming (MILP). The project aims to provide an intuitive interface for solving complex scheduling problems in manufacturing and project management.
+This is a web application developed by ENSAM Casablanca students that helps solve and visualize Gantt chart scheduling problems using Mixed Integer Linear Programming (MILP). The project aims to provide an intuitive interface for solving complex scheduling problems in manufacturing and project management.
 
 ## Features
 - Interactive web interface for problem input
