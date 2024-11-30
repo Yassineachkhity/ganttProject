@@ -1,25 +1,31 @@
-# Scheduling Solver Project
+# Gantt Project Solver
 
 ## Overview
-This is a web-based scheduling solver application that helps solve various scheduling problems using Mixed Integer Linear Programming (MILP).
+This is a web application developed by ENSAM Meknes students that helps solve and visualize Gantt chart scheduling problems using Mixed Integer Linear Programming (MILP). The project aims to provide an intuitive interface for solving complex scheduling problems in manufacturing and project management.
 
 ## Features
-- Support for different shop types:
-  - Flow Shop
-  - Job Shop
-  - Open Shop
-- Constraint selection
-- Multiple optimization criteria
-- Dynamic input for processing and setup times
+- Interactive web interface for problem input
+- Support for multiple scheduling scenarios:
+  - Flow Shop Scheduling
+  - Job Shop Scheduling
+  - Open Shop Scheduling
+- Real-time solution visualization
+- Constraint handling and optimization
+- Responsive design for all devices
 
 ## Installation
 
 ### Prerequisites
 - Python 3.8+
-- pip
+- pip package manager
 
 ### Setup
 1. Clone the repository
+```bash
+git clone https://github.com/Yassineachkhity/ganttProject.git
+cd ganttProject
+```
+
 2. Create a virtual environment
 ```bash
 python -m venv venv
@@ -33,35 +39,37 @@ pip install -r requirements.txt
 
 4. Run the application
 ```bash
-flask run
+python app.py
 ```
 
 ## Usage
-1. Select the shop type (Flow Shop, Job Shop, Open Shop)
-2. Set the number of machines and jobs
-3. Input processing and setup times
-4. Select constraints and optimization criteria
-5. Click "Solve Scheduling Problem"
+1. Navigate to the home page
+2. Choose your scheduling problem type
+3. Input your problem parameters:
+   - Number of machines
+   - Number of jobs
+   - Processing times
+   - Constraints
+4. Click "Solve" to generate the solution
+5. View the resulting Gantt chart
 
-## Constraints Supported
-- No Idle Time
-- No Wait
-- Machine Blocking
-- Sequence Dependent Setup Times
+## Technologies Used
+- Backend:
+  - Flask (Python web framework)
+  - PuLP (Optimization library)
+- Frontend:
+  - HTML5/CSS3
+  - JavaScript
+  - Bootstrap 5
+- Version Control:
+  - Git
 
-## Optimization Criteria
-- Minimize Makespan
-- Minimize Total Flow Time
-- Minimize Maximum Tardiness
-
-## Technologies
-- Flask
-- PuLP (Linear Programming)
-- Bootstrap
-- JavaScript
+## Team Members
+- ENSAM Meknes Students
+- Supervised by: [Supervisor Name]
 
 ## Contributing
-Contributions are welcome! Please submit pull requests or open issues.
+We welcome contributions from the community. Please feel free to submit issues and pull requests.
 
 ## License
-MIT License
+This project is licensed under the MIT License - see the LICENSE file for details.
