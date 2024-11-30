@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil - Solutions de Planification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0F172A',
+                        secondary: '#334155',
+                        accent: '#3B82F6',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg fixed w-full z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="index.html" class="text-2xl font-bold text-primary">
+                            Smart<span class="text-accent">Schedule</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Desktop menu -->
+                <div class="hidden sm:flex sm:items-center sm:ml-6">
+                    <div class="flex space-x-4">
+                        <a href="index.html" class="text-gray-600 hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">Accueil</a>
+                        <a href="services.html" class="text-gray-600 hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">Services</a>
+                        <a href="solve.html" class="text-gray-600 hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">Résoudre</a>
+                        <a href="contact.html" class="bg-accent text-white hover:bg-blue-600 px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">Nous Contacter</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-16">
+        <!-- Hero Section -->
+        <header class="relative bg-gradient-to-r from-blue-800 via-blue-900 to-blue-950 text-white">
+            <div class="absolute inset-0 bg-cover bg-center opacity-20 bg-blend-multiply" style="background-image: url('static/img/image.png');"></div>
+            <div class="absolute inset-0 bg-black opacity-40"></div>
+            <div class="container mx-auto px-6 py-20 md:py-24 lg:py-32 relative z-10">
+                <div class="max-w-2xl mx-auto text-center">
+                    <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white drop-shadow-lg whitespace-nowrap">
+                        Bienvenue sur <span class="text-blue-300">Smart</span>Schedule
+                    </h1>
+                    <p class="mt-4 text-lg md:text-xl text-gray-100 drop-shadow">
+                        Optimisez vos opérations avec des solutions alimentées par des algorithmes avancés. Réduisez les coûts et améliorez l'efficacité.
+                    </p>
+                    <div class="mt-8 flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6">
+                        <a href="solve.html" class="px-8 py-4 text-lg font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-xl hover:scale-105 hover:shadow-2xl transition transform duration-300 text-white border border-transparent">
+                            Explorer les Solutions
+                        </a>
+                        <a href="contact.html" class="px-8 py-4 text-lg font-semibold text-white bg-transparent rounded-lg border-2 border-white hover:bg-white hover:text-blue-900 transition duration-300">
+                            Contacter les Ventes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Features Section -->
+        <section class="py-20 bg-white">
+            <div class="container mx-auto px-4">
+                <h2 class="text-4xl font-bold text-center mb-4" data-aos="fade-up">Pourquoi Nous Choisir</h2>
+                <p class="text-xl text-gray-600 text-center mb-16 max-w-3xl mx-auto" data-aos="fade-up" data-aos-delay="100">
+                    Découvrez comment notre solution de planification intelligente peut transformer votre entreprise
+                </p>
+                
+                <div class="grid gap-8 md:grid-cols-3">
+                    <!-- Feature cards here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Team Section -->
+        <section class="py-20 bg-gray-50">
+            <!-- Team content here -->
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-primary text-white mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="col-span-1 md:col-span-2">
+                    <h3 class="text-2xl font-bold mb-4">Smart<span class="text-accent">Schedule</span></h3>
+                    <p class="text-gray-400 mb-4">Transformation de la planification industrielle avec des solutions innovantes et des technologies avancées.</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Liens Rapides</h4>
+                    <ul class="space-y-2">
+                        <li><a href="index.html" class="text-gray-400 hover:text-accent transition-colors duration-200">Accueil</a></li>
+                        <li><a href="services.html" class="text-gray-400 hover:text-accent transition-colors duration-200">Services</a></li>
+                        <li><a href="contact.html" class="text-gray-400 hover:text-accent transition-colors duration-200">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Contact</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li>Email: contact@scheduleai.com</li>
+                        <li>Address: ENSAM CASABLANCA</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 ScheduleAI. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 800,
+            once: true
+        });
+    </script>
+</body>
+</html>
