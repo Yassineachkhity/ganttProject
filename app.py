@@ -245,4 +245,4 @@ def generate_gantt_chart(job_order, processing_times, start_times):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
