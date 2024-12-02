@@ -90,8 +90,7 @@ The application will be available at `http://127.0.0.1:5000/`
   - Git
 
 ## Team Members
-- ENSAM Meknes Students
-- Supervised by: [Supervisor Name]
+- ENSAM CASABLANCA Students
 
 ## Contributing
 We welcome contributions from the community. Please feel free to submit issues and pull requests.
