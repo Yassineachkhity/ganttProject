@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Choose Scheduling Type{% endblock %}
+
+{% block head %}
+{{ super() }}
+<head>
+    <meta charset="UTF-8">
+    <title>Choose Scheduling Type</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+{% endblock %}
+
+{% block content %}
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <div class="bg-white shadow-lg rounded-lg p-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Choose Scheduling Type</h2>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Flowshop Card -->
+                <a href="{{ url_for('flowshop') }}" class="block">
+                    <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow duration-300 hover:border-primary cursor-pointer">
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-4">Flow Shop Scheduling</h3>
+                        <p class="text-gray-600 mb-4">
+                            Optimisez la séquence de production où tous les travaux suivent le même ordre de traitement sur les machines.
+                            Idéal pour les lignes de montage et les processus de fabrication séquentiels.
+                        </p>
+                        <ul class="text-gray-600 list-disc list-inside">
+                            <li>Même ordre de traitement pour tous les travaux</li>
+                            <li>Minimise le temps de réalisation total</li>
+                            <li>Prend en charge plusieurs règles d'optimisation</li>
+                        </ul>
+                    </div>
+                </a>
+
+                <!-- Jobshop Card -->
+                <a href="#" class="block">
+                    <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow duration-300 cursor-not-allowed opacity-70">
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-4">Job Shop Scheduling</h3>
+                        <p class="text-gray-600 mb-4">
+                            Gérez des plannings complexes où les travaux peuvent avoir des ordres de traitement différents sur les machines.
+                            Parfait pour la fabrication sur mesure et les systèmes de production flexibles.
+                        </p>
+                        <ul class="text-gray-600 list-disc list-inside">
+                            <li>Ordres de traitement différents possibles</li>
+                            <li>Itinéraire des machines flexible</li>
+                            <li>Comming Soon !</li>
+                        </ul>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+{% endblock %}

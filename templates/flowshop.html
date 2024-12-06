@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Flow Shop Scheduling{% endblock %}
+
+{% block head %}
+{{ super() }}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Update your jsPDF import to use the latest version -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-center mb-8">Flow Shop Scheduling</h1>
+
+    <div class="bg-white shadow-lg rounded-lg p-6">
+        <form id="scheduler-form" class="space-y-6">
+            <!-- Basic Configuration -->
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Number of Jobs</label>
+                    <input type="number" id="num_jobs" min="1" max="20" required
+                           class="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Number of Machines</label>
+                    <input type="number" id="num_machines" min="1" max="10" required
+                           class="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <!-- Scheduling Rules -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Scheduling Rule</label>
+                <select id="scheduling_rule" required
+                        class="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="spt">Shortest Processing Time (SPT)</option>
+                    <option value="lpt">Longest Processing Time (LPT)</option>
+                    <option value="fifo">First In First Out (FIFO)</option>
+                    <option value="lifo">Last In First Out (LIFO)</option>
+                    <option value="edd">Earliest Due Date (EDD)</option>
+                    <option value="cds">Campbell Dudek Smith (CDS)</option>
+                </select>
+            </div>
+
+            <!-- Constraints -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Constraints</label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" id="no_idle" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <span class="ml-2">No-Idle</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" id="no_wait" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <span class="ml-2">No-Wait</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" id="blocking" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <span class="ml-2">Blocking</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" id="setup_times" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <span class="ml-2">Setup Times</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex space-x-4">
+                <button type="button" id="generate_tables" 
+                        class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Generate Tables
+                </button>
+                <button type="submit"
+                        class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                    Solve Schedule
+                </button>
+            </div>
+
+            <!-- Dynamic Tables Container -->
+            <div id="tables_container" class="space-y-6">
+                <!-- Processing Times Table -->
+                <div id="processing_times_container" class="hidden">
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">Processing Times</h3>
+                    <div class="overflow-x-auto">
+                        <table id="processing_times_table" class="min-w-full divide-y divide-gray-200"></table>
+                    </div>
+                </div>
+
+                <!-- Release Times Table -->
+                <div id="release_times_container" class="hidden">
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">Release Times</h3>
+                    <div class="overflow-x-auto">
+                        <table id="release_times_table" class="min-w-full divide-y divide-gray-200"></table>
+                    </div>
+                </div>
+
+                <!-- Due Dates Table -->
+                <div id="due_dates_container" class="hidden">
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">Due Dates</h3>
+                    <div class="overflow-x-auto">
+                        <table id="due_dates_table" class="min-w-full divide-y divide-gray-200"></table>
+                    </div>
+                </div>
+
+                <!-- Setup Times Table -->
+                <div id="setup_times_container" class="hidden">
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">Setup Times</h3>
+                    <div class="overflow-x-auto">
+                        <table id="setup_times_table" class="min-w-full divide-y divide-gray-200"></table>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results Section -->
+    <div id="results_section" class="mt-8 bg-white shadow-lg rounded-lg p-6 hidden">
+        <h2 class="text-2xl font-bold mb-6">Scheduling Results</h2>
+
+        <!-- Job Sequence -->
+        <div class="mb-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Optimal Job Sequence</h3>
+            <div id="job_sequence" class="p-4 bg-gray-50 rounded-md"></div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="grid md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Makespan</h3>
+                <div id="makespan" class="p-4 bg-gray-50 rounded-md"></div>
+            </div>
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Machine Utilization</h3>
+                <div id="machine_utilization" class="p-4 bg-gray-50 rounded-md"></div>
+            </div>
+        </div>
+
+        <!-- Gantt Chart -->
+        <div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Gantt Chart</h3>
+            <div id="gantt_chart_error" class="hidden text-red-600"></div>
+            <div id="gantt_chart" class="w-full" style="min-height: 400px;"></div>
+        </div>
+
+        <!-- Export Button -->
+        <div id="loading_spinner" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+                <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid mx-auto mb-4"></div>
+                <p class="text-lg font-semibold text-gray-700">Calculating optimal schedule...</p>
+            </div>
+        </div>
+        
+        <button id="export_pdf" class="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105">
+            Export as PDF
+        </button>
+    </div>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="{{ url_for('static', filename='js/solve.js') }}"></script>
+
+<!-- Loading Spinner -->
+<div id="loading_spinner" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid mx-auto mb-4"></div>
+        <p class="text-lg font-semibold text-gray-700">Generating PDF...</p>
+    </div>
+</div>
+
+<script>
+    document.getElementById('export_pdf').addEventListener('click', async () => {
+        // Show loading indicator
+        const loadingSpinner = document.getElementById('loading_spinner');
+        loadingSpinner.classList.remove('hidden');
+
+        try {
+            const resultsSection = document.getElementById('results_section');
+            
+            // Create instance of jsPDF
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            // Calculate dimensions
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            
+            // Capture the content
+            const canvas = await html2canvas(resultsSection, {
+                scale: 2, // Higher quality
+                useCORS: true, // Handle cross-origin images
+                logging: false,
+                windowWidth: resultsSection.scrollWidth,
+                windowHeight: resultsSection.scrollHeight
+            });
+            
+            // Convert to image
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+            
+            // Calculate dimensions to fit page
+            const imgWidth = pdfWidth;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            // Add image to PDF
+            pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+            
+            // If content is longer than one page, add new pages
+            if (imgHeight > pdfHeight) {
+                let heightLeft = imgHeight - pdfHeight;
+                let position = -pdfHeight;
+                
+                while (heightLeft >= 0) {
+                    position = position - pdfHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pdfHeight;
+                }
+            }
+            
+            // Save the PDF
+            pdf.save('flow_shop_schedule.pdf');
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Error generating PDF. Please try again.');
+        } finally {
+            // Hide loading indicator
+            loadingSpinner.classList.add('hidden');
+        }
+    });
+</script>
+{% endblock %}

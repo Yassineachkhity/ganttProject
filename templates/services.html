@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Services{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-16 px-6">
+    <div class="text-center fade-in">
+        <h2 class="text-4xl font-extrabold text-blue-600 mb-4">
+            Solutions de Planification Intelligente pour les Entreprises Modernes
+        </h2>
+        <p class="text-lg text-gray-600">
+            Optimisez vos opérations avec des outils de planification innovants conçus pour améliorer la productivité et éliminer les inefficacités.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+        <!-- Carte 1 -->
+        <div class="bg-white rounded-lg shadow-lg p-6 fade-in">
+            <div class="flex justify-center mb-4">
+                <svg class="w-12 h-12 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 9h18v10H3V9zm0-4h18v2H3V5zm4 8v2h2v-2H7zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z"/>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-semibold mb-3">Efficacité des Lignes de Production</h3>
+            <p class="text-gray-600">
+                Rationalisez la production linéaire grâce à un séquencement intelligent. Réduisez les temps d'arrêt et optimisez le flux avec des algorithmes sur mesure.
+            </p>
+            <a href="#" class="block mt-5 text-blue-500 hover:underline">En savoir plus</a>
+        </div>
+
+        <!-- Carte 2 -->
+        <div class="bg-white rounded-lg shadow-lg p-6 fade-in">
+            <div class="flex justify-center mb-4">
+                <svg class="w-12 h-12 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-2v-4H8v-2h4V7h2v4h4v2h-4v4z"/>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-semibold mb-3">Atelier Flexible Adaptatif</h3>
+            <p class="text-gray-600">
+                Gérez les itinéraires de travail dynamiques avec facilité. Notre système s'adapte à vos besoins pour garantir une planification fluide et flexible.
+            </p>
+            <a href="#" class="block mt-5 text-blue-500 hover:underline">En savoir plus</a>
+        </div>
+
+        <!-- Carte 3 -->
+        <div class="bg-white rounded-lg shadow-lg p-6 fade-in">
+            <div class="flex justify-center mb-4">
+                <svg class="w-12 h-12 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-semibold mb-3">Optimisation Hybride</h3>
+            <p class="text-gray-600">
+                Maximisez l'efficacité dans des environnements complexes grâce à l'optimisation parallèle des processus hybrides.
+            </p>
+            <a href="#" class="block mt-5 text-blue-500 hover:underline">En savoir plus</a>
+        </div>
+    </div>
+
+    <div class="text-center mt-12">
+        <a href="{{ url_for('contact') }}" class="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-blue-700 transition-all">
+            Réserver une Consultation
+        </a>
+    </div>
+</div>
+
+<script>
+    // Animation fluide pour les éléments fade-in
+    window.addEventListener('DOMContentLoaded', () => {
+        const fadeElements = document.querySelectorAll('.fade-in');
+        fadeElements.forEach(el => {
+            setTimeout(() => el.classList.add('visible'), 200);
+        });
+    });
+</script>
+{% endblock %}

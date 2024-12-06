@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} - Solutions de Planification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0F172A',
+                        secondary: '#334155',
+                        accent: '#3B82F6',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg fixed w-full z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="{{ url_for('home') }}" class="text-2xl font-bold text-primary">
+                            Smart<span class="text-accent">Schedule</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Mobile menu button -->
+                <div class="flex items-center sm:hidden">
+                    <button type="button" class="mobile-menu-button inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Desktop menu -->
+                <div class="hidden sm:flex sm:items-center sm:ml-6">
+                    <div class="flex space-x-4">
+                        <a href="{{ url_for('home') }}" class="text-gray-600 hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">Accueil</a>
+                        <a href="{{ url_for('services') }}" class="text-gray-600 hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">Services</a>
+                        <a href="{{ url_for('solve') }}" class="text-gray-600 hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">Résoudre</a>
+                        <a href="{{ url_for('contact') }}" class="bg-accent text-white hover:bg-blue-600 px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">Nous Contacter</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile menu -->
+        <div class="sm:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="{{ url_for('home') }}" class="text-gray-600 hover:text-accent block px-3 py-2 rounded-md text-base font-medium">Accueil</a>
+                <a href="{{ url_for('services') }}" class="text-gray-600 hover:text-accent block px-3 py-2 rounded-md text-base font-medium">Services</a>
+                <a href="{{ url_for('solve') }}" class="text-gray-600 hover:text-accent block px-3 py-2 rounded-md text-base font-medium">Résoudre</a>
+                <a href="{{ url_for('contact') }}" class="bg-accent text-white block px-3 py-2 rounded-md text-base font-medium">Nous Contacter</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-16">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-primary text-white mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="col-span-1 md:col-span-2">
+                    <h3 class="text-2xl font-bold mb-4">Smart<span class="text-accent">Schedule</span></h3>
+                    <p class="text-gray-400 mb-4">Transformation de la planification industrielle avec des solutions innovantes et des technologies avancées. Optimisez vos opérations et maximisez l'efficacité.</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Liens Rapides</h4>
+                    <ul class="space-y-2">
+                        <li><a href="{{ url_for('home') }}" class="text-gray-400 hover:text-accent transition-colors duration-200">Accueil</a></li>
+                        <li><a href="{{ url_for('services') }}" class="text-gray-400 hover:text-accent transition-colors duration-200">Services</a></li>
+                        <li><a href="{{ url_for('contact') }}" class="text-gray-400 hover:text-accent transition-colors duration-200">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Contact</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li>Email: contact@scheduleai.com</li>
+                        <li>Address: ENSAM CASABLANCA</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 ScheduleAI. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Mobile menu JavaScript -->
+    <script>
+        document.querySelector('.mobile-menu-button').addEventListener('click', function() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>
