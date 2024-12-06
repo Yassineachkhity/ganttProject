@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize event listeners
     document.getElementById('generate_tables').addEventListener('click', generateTables);
     document.getElementById('scheduler-form').addEventListener('submit', handleScheduling);
-    document.getElementById('export_results').addEventListener('click', exportResults);
     document.getElementById('scheduling_rule').addEventListener('change', handleRuleChange);
     document.getElementById('setup_times').addEventListener('change', handleSetupTimesChange);
 });
@@ -222,82 +221,58 @@ function generateSetupTimesTable(numJobs, numMachines) {
     container.classList.remove('hidden');
 }
 
+function getProcessingTimes() {
+    const numJobs = parseInt(document.getElementById('num_jobs').value);
+    const numMachines = parseInt(document.getElementById('num_machines').value);
+    const processingTimes = [];
+    
+    for (let i = 0; i < numJobs; i++) {
+        const jobTimes = [];
+        for (let j = 0; j < numMachines; j++) {
+            const input = document.querySelector(`input[data-job="${i}"][data-machine="${j}"]`);
+            if (!input) {
+                throw new Error(`Missing processing time input for job ${i + 1}, machine ${j + 1}`);
+            }
+            const time = parseInt(input.value);
+            if (isNaN(time) || time < 0) {
+                throw new Error(`Invalid processing time for job ${i + 1}, machine ${j + 1}`);
+            }
+            jobTimes.push(time);
+        }
+        processingTimes.push(jobTimes);
+    }
+    return processingTimes;
+}
+
 async function handleScheduling(e) {
     e.preventDefault();
     
-    const numJobs = parseInt(document.getElementById('num_jobs').value);
-    const numMachines = parseInt(document.getElementById('num_machines').value);
-    const rule = document.getElementById('scheduling_rule').value;
-    
-    // Collect processing times
-    const processingTimes = Array.from({length: numJobs}, () => 
-        Array.from({length: numMachines}, () => 0)
-    );
-    
-    document.querySelectorAll('.processing-time').forEach(input => {
-        const job = parseInt(input.dataset.job);
-        const machine = parseInt(input.dataset.machine);
-        processingTimes[job][machine] = parseInt(input.value) || 0;
-    });
-    
-    // Collect additional data based on selected rule
-    let additionalData = {};
-    
-    if (rule === 'fifo' || rule === 'lifo') {
-        const releaseTimes = Array(numJobs).fill(0);
-        document.querySelectorAll('.release-time').forEach(input => {
-            const job = parseInt(input.dataset.job);
-            releaseTimes[job] = parseInt(input.value) || 0;
-        });
-        additionalData.release_times = releaseTimes;
-    }
-    
-    if (rule === 'edd') {
-        const dueDates = Array(numJobs).fill(0);
-        document.querySelectorAll('.due-date').forEach(input => {
-            const job = parseInt(input.dataset.job);
-            dueDates[job] = parseInt(input.value) || 0;
-        });
-        additionalData.due_dates = dueDates;
-    }
-    
-    // Collect setup times if enabled
-    if (document.getElementById('setup_times').checked) {
-        const setupTimes = Array.from({length: numJobs}, () => 
-            Array.from({length: numJobs}, () => 
-                Array.from({length: numMachines}, () => 0)
-            )
-        );
-        
-        document.querySelectorAll('.setup-time').forEach(input => {
-            const from = parseInt(input.dataset.from);
-            const to = parseInt(input.dataset.to);
-            const machine = parseInt(input.dataset.machine);
-            setupTimes[from][to][machine] = parseInt(input.value) || 0;
-        });
-        
-        additionalData.setup_times = setupTimes;
-    }
-    
-    // Collect constraints
-    const constraints = {
-        noWait: document.getElementById('no_wait').checked,
-        noIdle: document.getElementById('no_idle').checked,
-        blocking: document.getElementById('blocking').checked
-    };
-    
     try {
-        const response = await fetch('/schedule', {
+        // Collect form data
+        const formData = {
+            rule: document.getElementById('scheduling_rule').value,
+            num_jobs: parseInt(document.getElementById('num_jobs').value),
+            num_machines: parseInt(document.getElementById('num_machines').value),
+            no_wait: document.getElementById('no_wait').checked,
+            no_idle: document.getElementById('no_idle').checked,
+            blocking: document.getElementById('blocking').checked
+        };
+
+        // Get processing times
+        try {
+            formData.processing_times = getProcessingTimes();
+        } catch (error) {
+            alert(error.message);
+            return;
+        }
+
+        // Send request to server
+        const response = await fetch('/solve', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                processing_times: processingTimes,
-                rule: rule,
-                constraints: constraints,
-                ...additionalData
-            })
+            body: JSON.stringify(formData)
         });
         
         const data = await response.json();
@@ -324,9 +299,21 @@ function displayResults(data) {
         document.getElementById('job_sequence').textContent = 
             data.sequence.map(j => `Job ${j}`).join(' → ');
         
-        // Display makespan
+        // Display performance metrics
         document.getElementById('makespan').textContent = 
-            `Total completion time: ${data.makespan.toFixed(2)} units`;
+            `${data.makespan.toFixed(2)} units`;
+            
+        document.getElementById('total_flow_time').textContent = 
+            `${data.total_flow_time.toFixed(2)} units`;
+            
+        document.getElementById('avg_flow_time').textContent = 
+            `${data.avg_flow_time.toFixed(2)} units`;
+            
+        document.getElementById('tfr').textContent = 
+            data.tfr.toFixed(3);
+            
+        document.getElementById('tar').textContent = 
+            data.tar.toFixed(3);
         
         // Display machine utilization
         document.getElementById('machine_utilization').innerHTML = 
@@ -334,18 +321,10 @@ function displayResults(data) {
                 `Machine ${i + 1}: ${util.toFixed(2)}% utilization (Idle time: ${data.idle_times[i].toFixed(2)} units)`
             ).join('<br>');
         
-        // Hide any previous error message
-        document.getElementById('gantt_chart_error').classList.add('hidden');
-        
-        // Display Gantt chart
+        // Generate and display Gantt chart
         const ganttData = generateGanttData(data);
-        Plotly.newPlot('gantt_chart', ganttData.data, ganttData.layout)
-            .catch(error => {
-                console.error('Error plotting Gantt chart:', error);
-                document.getElementById('gantt_chart_error').textContent = 
-                    'Error displaying Gantt chart. Please check the console for details.';
-                document.getElementById('gantt_chart_error').classList.remove('hidden');
-            });
+        Plotly.newPlot('gantt_chart', ganttData.data, ganttData.layout);
+        
     } catch (error) {
         console.error('Error displaying results:', error);
         alert('Error displaying results. Please check the console for details.');
@@ -358,102 +337,112 @@ function generateGanttData(data) {
         '#00BCD4', '#FF5722', '#795548', '#607D8B', '#3F51B5'
     ];
     
-    try {
-        const plotData = [];
-        const numMachines = data.machine_utilization.length;
-        
-        for (let m = 0; m < numMachines; m++) {
-            for (let j = 0; j < data.sequence.length; j++) {
-                const jobIndex = data.sequence[j] - 1;
-                const start = data.start_times[j][m];
-                const end = data.completion_times[j][m];
-                const duration = end - start;
-                
-                plotData.push({
-                    x: [start, end],
-                    y: [`Machine ${m + 1}`, `Machine ${m + 1}`],
-                    mode: 'lines',
-                    line: {
-                        color: colors[jobIndex % colors.length],
-                        width: 20
-                    },
-                    name: `Job ${data.sequence[j]}`,
-                    showlegend: m === 0,  // Show legend only once per job
-                    hovertemplate: 
-                        `Job ${data.sequence[j]}<br>` +
-                        `Machine ${m + 1}<br>` +
-                        `Start: %{x[0]:.2f}<br>` +
-                        `End: %{x[1]:.2f}<br>` +
-                        `Duration: ${duration.toFixed(2)}<br>` +
-                        `<extra></extra>`  // Removes secondary box
-                });
-            }
+    const plotData = [];
+    const numMachines = data.machine_utilization.length;
+    
+    for (let m = 0; m < numMachines; m++) {
+        for (let j = 0; j < data.sequence.length; j++) {
+            const jobIndex = data.sequence[j] - 1;
+            const start = data.start_times[j][m];
+            const end = data.completion_times[j][m];
+            const duration = end - start;
+            
+            plotData.push({
+                x: [start, end],
+                y: [`Machine ${m + 1}`, `Machine ${m + 1}`],
+                mode: 'lines',
+                line: {
+                    color: colors[jobIndex % colors.length],
+                    width: 20
+                },
+                name: `Job ${data.sequence[j]}`,
+                showlegend: m === 0,  // Show legend only once per job
+                hovertemplate: 
+                    `Job ${data.sequence[j]}<br>` +
+                    `Machine ${m + 1}<br>` +
+                    `Start: %{x[0]:.2f}<br>` +
+                    `End: %{x[1]:.2f}<br>` +
+                    `Duration: ${duration.toFixed(2)}<br>` +
+                    `<extra></extra>`  // Removes secondary box
+            });
         }
-        
-        const layout = {
-            title: 'Gantt Chart',
-            xaxis: {
-                title: 'Time',
-                showgrid: true,
-                zeroline: true
-            },
-            yaxis: {
-                showgrid: true,
-                zeroline: false
-            },
-            height: 400,
-            margin: {
-                l: 100,
-                r: 50,
-                t: 50,
-                b: 50
-            },
-            hovermode: 'closest'
-        };
-        
-        return { data: plotData, layout };
+    }
+    
+    const layout = {
+        title: 'Gantt Chart',
+        xaxis: {
+            title: 'Time',
+            showgrid: true,
+            zeroline: true
+        },
+        yaxis: {
+            showgrid: true,
+            zeroline: true,
+            autorange: 'reversed'  // Reverses the order of machines
+        },
+        height: 400,
+        margin: { t: 50, b: 50, l: 100, r: 50 },
+        showlegend: true,
+        legend: {
+            traceorder: 'normal',
+            font: { size: 10 },
+            orientation: 'h'
+        }
+    };
+    
+    return { data: plotData, layout: layout };
+}
+
+function exportToPDF() {
+    try {
+        // Create a new jsPDF instance
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Set title
+        doc.setFontSize(18);
+        doc.text('Flow Shop Scheduling Results', 105, 20, { align: 'center' });
+
+        // Job Sequence
+        doc.setFontSize(12);
+        const jobSequence = document.getElementById('job_sequence').innerText;
+        doc.text('Job Sequence:', 20, 40);
+        doc.text(jobSequence, 20, 50);
+
+        // Performance Metrics
+        const metrics = [
+            { label: 'Makespan (Cmax)', id: 'makespan' },
+            { label: 'Total Flow Time', id: 'total_flow_time' },
+            { label: 'Average Flow Time', id: 'avg_flow_time' },
+            { label: 'Total Flow Ratio (TFR)', id: 'tfr' },
+            { label: 'Time Average Ratio (TAR)', id: 'tar' }
+        ];
+
+        doc.text('Performance Metrics:', 20, 70);
+        let y = 80;
+        metrics.forEach(metric => {
+            const value = document.getElementById(metric.id).innerText;
+            doc.text(`${metric.label}: ${value}`, 25, y);
+            y += 10;
+        });
+
+        // Machine Utilization
+        doc.text('Machine Utilization:', 20, y + 10);
+        const utilization = document.getElementById('machine_utilization').innerText;
+        y += 20;
+        doc.text(utilization, 25, y);
+
+        // Save PDF
+        doc.save('flowshop_schedule.pdf');
     } catch (error) {
-        console.error('Error generating Gantt data:', error);
-        throw error;
+        console.error('PDF Export Error:', error);
+        alert('Failed to export PDF. Please try again.');
     }
 }
 
-function exportResults() {
-    const resultsSection = document.getElementById('results_section');
-    
-    // Create a copy of the results section
-    const content = resultsSection.cloneNode(true);
-    
-    // Remove the Plotly chart (it will be replaced with an image)
-    const ganttChart = content.querySelector('#gantt_chart');
-    if (ganttChart) {
-        const img = document.createElement('img');
-        img.src = Plotly.toImage('gantt_chart', {format: 'png', width: 800, height: 400})
-            .then(url => img.src = url);
-        ganttChart.parentNode.replaceChild(img, ganttChart);
+document.addEventListener('DOMContentLoaded', () => {
+    const exportButton = document.getElementById('export_results');
+    if (exportButton) {
+        exportButton.addEventListener('click', exportToPDF);
     }
-    
-    // Create and download HTML file
-    const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Flow Shop Scheduling Results</title>
-            <script src="https://cdn.tailwindcss.com"></script>
-        </head>
-        <body class="p-8">
-            ${content.outerHTML}
-        </body>
-        </html>
-    `;
-    
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'scheduling_results.html';
-    a.click();
-    window.URL.revokeObjectURL(url);
-}
-
-
+});

@@ -110,89 +110,97 @@ def solve():
                 # For EDD, we'll use total processing time as due date estimation
                 due_dates = np.sum(processing_times, axis=1)
                 job_order = np.argsort(due_dates)  # Order by earliest due date
-            elif rule == "johnson":
-                if num_machines == 2:
-                    machine1_times = processing_times[:, 0]
-                    machine2_times = processing_times[:, 1]
-                    set1 = [(i, t) for i, t in enumerate(machine1_times) if t <= machine2_times[i]]
-                    set2 = [(i, t) for i, t in enumerate(machine1_times) if t > machine2_times[i]]
-                    
-                    set1.sort(key=lambda x: x[1])  # Sort set1 by machine1 times
-                    set2.sort(key=lambda x: -machine2_times[x[0]])  # Sort set2 by machine2 times in descending order
-                    
-                    job_order = [job[0] for job in set1 + set2]
-                else:
-                    return jsonify({"error": "Johnson's rule works only for 2 machines"}), 400
             elif rule == "cds":
-                job_order = apply_cds_rule(processing_times)
+                job_order = [i - 1 for i in apply_cds_rule(processing_times)]  # Convert back to 0-based indexing
             else:
                 return jsonify({"error": "Invalid scheduling rule selected"}), 400
 
-            # Apply the job order to processing times
-            ordered_processing_times = processing_times[job_order]
-
-            # Calculate completion times for each job on each machine with constraints
-            completion_times = np.zeros_like(ordered_processing_times)
-            start_times = np.zeros_like(ordered_processing_times)
-            machine_available_times = np.zeros(num_machines)  # When each machine becomes available
-            job_completion_times = np.zeros(num_jobs)  # When each job completes its current operation
-
+            # Calculate schedule
+            start_times = np.zeros((num_jobs, num_machines))
+            completion_times = np.zeros((num_jobs, num_machines))
+            
+            # Apply job order to processing times
+            ordered_times = processing_times[job_order]
+            
+            # Calculate start and completion times
             for i in range(num_jobs):
                 for j in range(num_machines):
-                    # Calculate earliest possible start time
-                    if j == 0:  # First machine
-                        start_time = machine_available_times[j]
+                    if i == 0 and j == 0:
+                        start_times[i][j] = 0
+                    elif i == 0:
+                        start_times[i][j] = completion_times[i][j-1]
+                    elif j == 0:
+                        start_times[i][j] = completion_times[i-1][j]
                     else:
-                        # Consider previous operation of the same job
-                        start_time = max(job_completion_times[i], machine_available_times[j])
-                        
-                        if no_wait:
-                            # Must start immediately after previous operation
-                            start_time = job_completion_times[i]
-                        
-                        if blocking:
-                            # Must wait for next machine to be available
-                            if j < num_machines - 1:
-                                start_time = max(start_time, machine_available_times[j+1])
+                        start_times[i][j] = max(completion_times[i][j-1], completion_times[i-1][j])
                     
-                    if no_idle and i > 0:
-                        # Machine cannot be idle between jobs
-                        start_time = max(start_time, machine_available_times[j])
-                    
-                    # Calculate completion time
-                    completion_time = start_time + ordered_processing_times[i][j]
-                    
-                    # Update times
-                    start_times[i][j] = start_time
-                    completion_times[i][j] = completion_time
-                    machine_available_times[j] = completion_time
-                    job_completion_times[i] = completion_time
-
-            # Calculate metrics
-            total_time = np.max(completion_times)  # Makespan
-            total_flow_time = np.sum(completion_times[:, -1])  # Sum of completion times
-            tfr = total_flow_time / (num_jobs * num_machines)
-            tar = total_flow_time / num_jobs
-            c_max = total_time
-
-            # Generate Gantt chart with start and completion times
-            gantt_chart = generate_gantt_chart(job_order, ordered_processing_times, start_times)
-
-            # Return the results as JSON
+                    completion_times[i][j] = start_times[i][j] + ordered_times[i][j]
+            
+            # Apply constraints if needed
+            if no_wait:
+                start_times, completion_times = apply_no_wait_constraint(job_order, ordered_times)
+            if no_idle:
+                start_times, completion_times = apply_no_idle_constraint(job_order, ordered_times)
+            if blocking:
+                start_times, completion_times = apply_blocking_constraint(job_order, ordered_times)
+            
+            # Calculate performance metrics
+            makespan = float(completion_times[-1][-1])
+            total_flow_time = float(np.sum(completion_times[:, -1]))
+            avg_flow_time = total_flow_time / num_jobs
+            tfr = total_flow_time / (makespan * num_jobs)
+            tar = avg_flow_time / makespan
+            
+            # Calculate machine utilization
+            machine_utilization = calculate_machine_utilization(start_times, completion_times, makespan)
+            idle_times = calculate_idle_times(start_times, completion_times, makespan)
+            
             return jsonify({
-                "total_time": float(total_time),
-                "total_flow_time": float(total_flow_time),
-                "tfr": float(tfr),
-                "tar": float(tar),
-                "c_max": float(c_max),
-                "gantt_chart": gantt_chart,
-                "job_order": [int(i + 1) for i in job_order]  # Add 1 to make it 1-based for display
+                "sequence": [int(j + 1) for j in job_order],  # Convert to 1-based indexing
+                "start_times": start_times.tolist(),
+                "completion_times": completion_times.tolist(),
+                "makespan": makespan,
+                "total_flow_time": total_flow_time,
+                "avg_flow_time": avg_flow_time,
+                "tfr": tfr,
+                "tar": tar,
+                "machine_utilization": machine_utilization.tolist(),
+                "idle_times": idle_times.tolist()
             })
 
         except Exception as e:
+            print(f"Error in solve: {str(e)}")  # Add logging
             return jsonify({"error": str(e)}), 400
 
     return render_template('solve.html')
+
+
+def calculate_performance_metrics(completion_times):
+    """Calculate various performance metrics for the schedule."""
+    num_jobs = len(completion_times)
+    
+    # Calculate Cmax (makespan)
+    makespan = float(completion_times[-1][-1])
+    
+    # Calculate total flow time
+    total_flow_time = sum(job_times[-1] for job_times in completion_times)
+    
+    # Calculate average flow time
+    avg_flow_time = total_flow_time / num_jobs
+    
+    # Calculate TFR (Total Flow Ratio)
+    tfr = total_flow_time / makespan
+    
+    # Calculate TAR (Time in Average Ratio)
+    tar = avg_flow_time / makespan
+    
+    return {
+        "makespan": makespan,
+        "total_flow_time": total_flow_time,
+        "avg_flow_time": avg_flow_time,
+        "tfr": tfr,
+        "tar": tar
+    }
 
 
 def generate_gantt_chart(job_order, processing_times, start_times):
@@ -336,12 +344,12 @@ def LIFO(release_times):
     sorted_jobs = [x for _, x in sorted(zip(release_times, jobs), reverse=True)]
     return sorted_jobs
 
-def apply_no_idle_constraint(sequence, processing_times, setup_times=None):
-    """
-    Adjust schedule to ensure no idle time between jobs on machines
-    """
+def apply_no_idle_constraint(sequence, processing_times):
+    """Apply no-idle constraint to the schedule"""
+    processing_times = np.array(processing_times)
     num_jobs = len(sequence)
     num_machines = processing_times.shape[1]
+    
     start_times = np.zeros((num_jobs, num_machines))
     completion_times = np.zeros((num_jobs, num_machines))
     
@@ -351,7 +359,7 @@ def apply_no_idle_constraint(sequence, processing_times, setup_times=None):
             start_times[0][m] = 0
         else:
             start_times[0][m] = completion_times[0][m-1]
-        completion_times[0][m] = start_times[0][m] + processing_times[sequence[0]][m]
+        completion_times[0][m] = start_times[0][m] + processing_times[0][m]
     
     # Remaining jobs
     for j in range(1, num_jobs):
@@ -361,19 +369,13 @@ def apply_no_idle_constraint(sequence, processing_times, setup_times=None):
             else:
                 # Ensure no idle time on machine m
                 start_times[j][m] = max(completion_times[j][m-1], completion_times[j-1][m])
-            
-            if setup_times is not None:
-                setup_time = setup_times[sequence[j-1]][sequence[j]][m]
-                start_times[j][m] += setup_time
-                
-            completion_times[j][m] = start_times[j][m] + processing_times[sequence[j]][m]
+            completion_times[j][m] = start_times[j][m] + processing_times[j][m]
     
     return start_times, completion_times
 
 def apply_no_wait_constraint(sequence, processing_times, setup_times=None):
-    """
-    Adjust schedule to ensure no waiting time between operations of the same job
-    """
+    """Adjust schedule to ensure no waiting time between operations of the same job"""
+    processing_times = np.array(processing_times)
     num_jobs = len(sequence)
     num_machines = processing_times.shape[1]
     start_times = np.zeros((num_jobs, num_machines))
@@ -383,7 +385,7 @@ def apply_no_wait_constraint(sequence, processing_times, setup_times=None):
     current_time = 0
     for m in range(num_machines):
         start_times[0][m] = current_time
-        completion_times[0][m] = start_times[0][m] + processing_times[sequence[0]][m]
+        completion_times[0][m] = start_times[0][m] + processing_times[0][m]
         current_time = completion_times[0][m]
     
     # Remaining jobs
@@ -397,15 +399,14 @@ def apply_no_wait_constraint(sequence, processing_times, setup_times=None):
         # Ensure continuous processing across machines
         for m in range(num_machines):
             start_times[j][m] = current_time
-            completion_times[j][m] = start_times[j][m] + processing_times[sequence[j]][m]
+            completion_times[j][m] = start_times[j][m] + processing_times[j][m]
             current_time = completion_times[j][m]
     
     return start_times, completion_times
 
 def apply_blocking_constraint(sequence, processing_times, setup_times=None):
-    """
-    Adjust schedule to handle blocking between machines
-    """
+    """Adjust schedule to handle blocking between machines"""
+    processing_times = np.array(processing_times)
     num_jobs = len(sequence)
     num_machines = processing_times.shape[1]
     start_times = np.zeros((num_jobs, num_machines))
@@ -418,7 +419,7 @@ def apply_blocking_constraint(sequence, processing_times, setup_times=None):
             start_times[0][m] = 0
         else:
             start_times[0][m] = completion_times[0][m-1]
-        completion_times[0][m] = start_times[0][m] + processing_times[sequence[0]][m]
+        completion_times[0][m] = start_times[0][m] + processing_times[0][m]
     
     # Remaining jobs
     for j in range(1, num_jobs):
@@ -442,7 +443,7 @@ def apply_blocking_constraint(sequence, processing_times, setup_times=None):
                     start_times[j][m] = max(completion_times[j][m-1], 
                                           completion_times[j-1][m])
             
-            completion_times[j][m] = start_times[j][m] + processing_times[sequence[j]][m]
+            completion_times[j][m] = start_times[j][m] + processing_times[j][m]
             
             # Calculate blocking time if not last machine
             if m < num_machines - 1:
@@ -552,26 +553,28 @@ def calculate_schedule(sequence, processing_times, setup_times=None):
 
 def calculate_machine_utilization(start_times, completion_times, makespan):
     """Calculate utilization percentage for each machine"""
+    start_times = np.array(start_times)
+    completion_times = np.array(completion_times)
     num_machines = start_times.shape[1]
-    utilization = []
+    utilization = np.zeros(num_machines)
     
     for m in range(num_machines):
-        total_processing_time = sum(completion_times[j][m] - start_times[j][m] 
-                                  for j in range(start_times.shape[0]))
-        utilization.append((total_processing_time / makespan) * 100)
-    
+        total_processing_time = sum(completion_times[:, m] - start_times[:, m])
+        utilization[m] = (total_processing_time / makespan) * 100
+        
     return utilization
 
 def calculate_idle_times(start_times, completion_times, makespan):
     """Calculate idle time for each machine"""
+    start_times = np.array(start_times)
+    completion_times = np.array(completion_times)
     num_machines = start_times.shape[1]
-    idle_times = []
+    idle_times = np.zeros(num_machines)
     
     for m in range(num_machines):
-        total_processing_time = sum(completion_times[j][m] - start_times[j][m] 
-                                  for j in range(start_times.shape[0]))
-        idle_times.append(makespan - total_processing_time)
-    
+        busy_time = sum(completion_times[:, m] - start_times[:, m])
+        idle_times[m] = makespan - busy_time
+        
     return idle_times
 
 if __name__ == '__main__':

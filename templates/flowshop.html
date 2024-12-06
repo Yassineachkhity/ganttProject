@@ -120,48 +120,56 @@
     <!-- Results Section -->
     <div id="results_section" class="mt-8 bg-white shadow-lg rounded-lg p-6 hidden">
         <h2 class="text-2xl font-bold mb-6">Scheduling Results</h2>
-
+        
         <!-- Job Sequence -->
-        <div class="mb-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-2">Optimal Job Sequence</h3>
-            <div id="job_sequence" class="p-4 bg-gray-50 rounded-md"></div>
+        <div class="mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Job Sequence</h3>
+            <p id="job_sequence" class="mt-2 text-gray-600"></p>
         </div>
 
         <!-- Performance Metrics -->
-        <div class="grid md:grid-cols-2 gap-6 mb-6">
-            <div>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Makespan</h3>
-                <div id="makespan" class="p-4 bg-gray-50 rounded-md"></div>
+        <div class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="font-medium text-gray-900">Makespan (Cmax)</h4>
+                <p id="makespan" class="mt-1 text-gray-600"></p>
             </div>
-            <div>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Machine Utilization</h3>
-                <div id="machine_utilization" class="p-4 bg-gray-50 rounded-md"></div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="font-medium text-gray-900">Total Flow Time</h4>
+                <p id="total_flow_time" class="mt-1 text-gray-600"></p>
             </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="font-medium text-gray-900">Average Flow Time</h4>
+                <p id="avg_flow_time" class="mt-1 text-gray-600"></p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="font-medium text-gray-900">Total Flow Ratio (TFR)</h4>
+                <p id="tfr" class="mt-1 text-gray-600"></p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="font-medium text-gray-900">Time Average Ratio (TAR)</h4>
+                <p id="tar" class="mt-1 text-gray-600"></p>
+            </div>
+        </div>
+
+        <!-- Machine Utilization -->
+        <div class="mb-6">
+            <h3 class="text-lg font-medium text-gray-900">Machine Utilization</h3>
+            <div id="machine_utilization" class="mt-2 text-gray-600"></div>
         </div>
 
         <!-- Gantt Chart -->
-        <div>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">Gantt Chart</h3>
-            <div id="gantt_chart_error" class="hidden text-red-600"></div>
-            <div id="gantt_chart" class="w-full" style="min-height: 400px;"></div>
+        <div class="mb-6">
+            <h3 class="text-lg font-medium text-gray-900">Gantt Chart</h3>
+            <div id="gantt_chart" class="mt-4"></div>
+            <p id="gantt_chart_error" class="mt-2 text-red-600 hidden"></p>
         </div>
 
         <!-- Export Button -->
-        <div id="loading_spinner" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-xl text-center">
-                <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid mx-auto mb-4"></div>
-                <p class="text-lg font-semibold text-gray-700">Calculating optimal schedule...</p>
-            </div>
-        </div>
-        
-        <button id="export_pdf" class="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105">
-            Export as PDF
+        <button id="export_results" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            Export Results
         </button>
     </div>
 </div>
-
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<script src="{{ url_for('static', filename='js/solve.js') }}"></script>
 
 <!-- Loading Spinner -->
 <div id="loading_spinner" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -172,7 +180,7 @@
 </div>
 
 <script>
-    document.getElementById('export_pdf').addEventListener('click', async () => {
+    document.getElementById('export_results').addEventListener('click', async () => {
         // Show loading indicator
         const loadingSpinner = document.getElementById('loading_spinner');
         loadingSpinner.classList.remove('hidden');
@@ -180,48 +188,85 @@
         try {
             const resultsSection = document.getElementById('results_section');
             
+            // Wait for any Plotly charts to be fully rendered
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
             // Create instance of jsPDF
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             
-            // Calculate dimensions
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
+            // Add title
+            pdf.setFontSize(20);
+            pdf.text('Flow Shop Scheduling Results', 105, 15, { align: 'center' });
+            pdf.setFontSize(12);
             
-            // Capture the content
-            const canvas = await html2canvas(resultsSection, {
-                scale: 2, // Higher quality
-                useCORS: true, // Handle cross-origin images
-                logging: false,
-                windowWidth: resultsSection.scrollWidth,
-                windowHeight: resultsSection.scrollHeight
+            // Add job sequence
+            const jobSequence = document.getElementById('job_sequence').innerText;
+            pdf.text('Job Sequence:', 20, 30);
+            pdf.text(jobSequence, 20, 37);
+            
+            // Add performance metrics
+            pdf.text('Performance Metrics:', 20, 50);
+            const metrics = [
+                ['Makespan (Cmax):', document.getElementById('makespan').innerText],
+                ['Total Flow Time:', document.getElementById('total_flow_time').innerText],
+                ['Average Flow Time:', document.getElementById('avg_flow_time').innerText],
+                ['Total Flow Ratio (TFR):', document.getElementById('tfr').innerText],
+                ['Time Average Ratio (TAR):', document.getElementById('tar').innerText]
+            ];
+            
+            let yPos = 57;
+            metrics.forEach(([label, value]) => {
+                pdf.text(`${label} ${value}`, 25, yPos);
+                yPos += 7;
             });
             
-            // Convert to image
-            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+            // Add machine utilization
+            pdf.text('Machine Utilization:', 20, yPos + 10);
+            const utilization = document.getElementById('machine_utilization').innerText;
+            pdf.text(utilization, 25, yPos + 17);
             
-            // Calculate dimensions to fit page
-            const imgWidth = pdfWidth;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            
-            // Add image to PDF
-            pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-            
-            // If content is longer than one page, add new pages
-            if (imgHeight > pdfHeight) {
-                let heightLeft = imgHeight - pdfHeight;
-                let position = -pdfHeight;
+            // Capture and add Gantt chart
+            const ganttChart = document.getElementById('gantt_chart');
+            if (ganttChart) {
+                const canvas = await html2canvas(ganttChart, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                });
                 
-                while (heightLeft >= 0) {
-                    position = position - pdfHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pdfHeight;
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                
+                // Add new page for Gantt chart
+                pdf.addPage();
+                pdf.text('Gantt Chart:', 20, 20);
+                
+                // Calculate dimensions to fit page while maintaining aspect ratio
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const margin = 20;
+                const maxWidth = pageWidth - (2 * margin);
+                const maxHeight = pageHeight - (3 * margin);
+                
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+                
+                let finalWidth = maxWidth;
+                let finalHeight = (imgHeight * maxWidth) / imgWidth;
+                
+                if (finalHeight > maxHeight) {
+                    finalHeight = maxHeight;
+                    finalWidth = (imgWidth * maxHeight) / imgHeight;
                 }
+                
+                const xPos = (pageWidth - finalWidth) / 2;
+                pdf.addImage(imgData, 'JPEG', xPos, 30, finalWidth, finalHeight);
             }
             
             // Save the PDF
             pdf.save('flow_shop_schedule.pdf');
+            
         } catch (error) {
             console.error('Error generating PDF:', error);
             alert('Error generating PDF. Please try again.');
@@ -231,4 +276,7 @@
         }
     });
 </script>
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="{{ url_for('static', filename='js/solve.js') }}"></script>
 {% endblock %}
