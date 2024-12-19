@@ -1,282 +1,292 @@
-{% extends "base.html" %}
+{% extends "home.html" %}
 
-{% block title %}Flow Shop Scheduling{% endblock %}
 
-{% block head %}
-{{ super() }}
+
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <!-- Update your jsPDF import to use the latest version -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-center mb-8">Flow Shop Scheduling</h1>
+<div class="min-h-screen bg-gray-50">
+  <section class="pt-2 pb-8 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <div class="max-w-full mx-auto">
+        <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8">
+          <div class="grid grid-cols-1 gap-6 md:gap-8">
+            <div class="w-full">
+              <h1 class="text-3xl font-bold text-center mb-8">Flow Shop Scheduling</h1>
 
-    <div class="bg-white shadow-lg rounded-lg p-6">
-        <form id="scheduler-form" class="space-y-6">
-            <!-- Basic Configuration -->
-            <div class="grid md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Number of Jobs</label>
-                    <input type="number" id="num_jobs" min="1" max="20" required
-                           class="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Number of Machines</label>
-                    <input type="number" id="num_machines" min="1" max="10" required
-                           class="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-            </div>
+              <div class="bg-white shadow-lg rounded-lg p-6">
+                <form id="scheduler-form" class="space-y-6">
+                  <!-- Basic Configuration -->
+                  <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700">Number of Jobs</label>
+                      <input type="number" id="num_jobs" min="1" max="20" required
+                             class="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700">Number of Machines</label>
+                      <input type="number" id="num_machines" min="1" max="10" required
+                             class="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                  </div>
 
-            <!-- Scheduling Rules -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Scheduling Rule</label>
-                <select id="scheduling_rule" required
-                        class="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                    <option value="spt">Shortest Processing Time (SPT)</option>
-                    <option value="lpt">Longest Processing Time (LPT)</option>
-                    <option value="fifo">First In First Out (FIFO)</option>
-                    <option value="lifo">Last In First Out (LIFO)</option>
-                    <option value="edd">Earliest Due Date (EDD)</option>
-                    <option value="cds">Campbell Dudek Smith (CDS)</option>
-                </select>
-            </div>
+                  <!-- Scheduling Rules -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Scheduling Rule</label>
+                    <select id="scheduling_rule" required
+                            class="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                      <option value="spt">Shortest Processing Time (SPT)</option>
+                      <option value="lpt">Longest Processing Time (LPT)</option>
+                      <option value="fifo">First In First Out (FIFO)</option>
+                      <option value="lifo">Last In First Out (LIFO)</option>
+                      <option value="edd">Earliest Due Date (EDD)</option>
+                      <option value="cds">Campbell Dudek Smith (CDS)</option>
+                      <option value="johnson">Johnson Rule</option>
+                    </select>
+                  </div>
 
-            <!-- Constraints -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Constraints</label>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <label class="inline-flex items-center">
+                  <!-- Constraints -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Constraints</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <label class="inline-flex items-center">
                         <input type="checkbox" id="no_idle" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         <span class="ml-2">No-Idle</span>
-                    </label>
-                    <label class="inline-flex items-center">
+                      </label>
+                      <label class="inline-flex items-center">
                         <input type="checkbox" id="no_wait" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         <span class="ml-2">No-Wait</span>
-                    </label>
-                    <label class="inline-flex items-center">
+                      </label>
+                      <label class="inline-flex items-center">
                         <input type="checkbox" id="blocking" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         <span class="ml-2">Blocking</span>
-                    </label>
-                    <label class="inline-flex items-center">
+                      </label>
+                      <label class="inline-flex items-center">
                         <input type="checkbox" id="setup_times" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         <span class="ml-2">Setup Times</span>
-                    </label>
-                </div>
-            </div>
+                      </label>
+                    </div>
+                  </div>
 
-            <!-- Action Buttons -->
-            <div class="flex space-x-4">
-                <button type="button" id="generate_tables" 
-                        class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    Generate Tables
-                </button>
-                <button type="submit"
-                        class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                    Solve Schedule
-                </button>
-            </div>
+                  <!-- Action Buttons -->
+                  <div class="flex space-x-4">
+                    <button type="button" id="generate_tables" 
+                            class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                      Generate Tables
+                    </button>
+                    <button type="submit"
+                            class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                      Solve Schedule
+                    </button>
+                  </div>
 
-            <!-- Dynamic Tables Container -->
-            <div id="tables_container" class="space-y-6">
-                <!-- Processing Times Table -->
-                <div id="processing_times_container" class="hidden">
-                    <h3 class="text-lg font-medium text-gray-900 mb-3">Processing Times</h3>
-                    <div class="overflow-x-auto">
+                  <!-- Dynamic Tables Container -->
+                  <div id="tables_container" class="space-y-6">
+                    <!-- Processing Times Table -->
+                    <div id="processing_times_container" class="hidden">
+                      <h3 class="text-lg font-medium text-gray-900 mb-3">Processing Times</h3>
+                      <div class="overflow-x-auto">
                         <table id="processing_times_table" class="min-w-full divide-y divide-gray-200"></table>
+                      </div>
                     </div>
-                </div>
 
-                <!-- Release Times Table -->
-                <div id="release_times_container" class="hidden">
-                    <h3 class="text-lg font-medium text-gray-900 mb-3">Release Times</h3>
-                    <div class="overflow-x-auto">
+                    <!-- Release Times Table -->
+                    <div id="release_times_container" class="hidden">
+                      <h3 class="text-lg font-medium text-gray-900 mb-3">Release Times</h3>
+                      <div class="overflow-x-auto">
                         <table id="release_times_table" class="min-w-full divide-y divide-gray-200"></table>
+                      </div>
                     </div>
-                </div>
 
-                <!-- Due Dates Table -->
-                <div id="due_dates_container" class="hidden">
-                    <h3 class="text-lg font-medium text-gray-900 mb-3">Due Dates</h3>
-                    <div class="overflow-x-auto">
+                    <!-- Due Dates Table -->
+                    <div id="due_dates_container" class="hidden">
+                      <h3 class="text-lg font-medium text-gray-900 mb-3">Due Dates</h3>
+                      <div class="overflow-x-auto">
                         <table id="due_dates_table" class="min-w-full divide-y divide-gray-200"></table>
+                      </div>
                     </div>
-                </div>
 
-                <!-- Setup Times Table -->
-                <div id="setup_times_container" class="hidden">
-                    <h3 class="text-lg font-medium text-gray-900 mb-3">Setup Times</h3>
-                    <div class="overflow-x-auto">
+                    <!-- Setup Times Table -->
+                    <div id="setup_times_container" class="hidden">
+                      <h3 class="text-lg font-medium text-gray-900 mb-3">Setup Times</h3>
+                      <div class="overflow-x-auto">
                         <table id="setup_times_table" class="min-w-full divide-y divide-gray-200"></table>
+                      </div>
                     </div>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Results Section -->
+              <div id="results_section" class="mt-8 bg-white shadow-lg rounded-lg p-6 hidden">
+                <h2 class="text-2xl font-bold mb-6">Scheduling Results</h2>
+                
+                <!-- Job Sequence -->
+                <div class="mb-4">
+                  <h3 class="text-lg font-medium text-gray-900">Job Sequence</h3>
+                  <p id="job_sequence" class="mt-2 text-gray-600"></p>
                 </div>
+
+                <!-- Performance Metrics -->
+                <div class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-medium text-gray-900">Makespan (Cmax)</h4>
+                    <p id="makespan" class="mt-1 text-gray-600"></p>
+                  </div>
+                  <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-medium text-gray-900">Total Flow Time</h4>
+                    <p id="total_flow_time" class="mt-1 text-gray-600"></p>
+                  </div>
+                  <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-medium text-gray-900">Average Flow Time</h4>
+                    <p id="avg_flow_time" class="mt-1 text-gray-600"></p>
+                  </div>
+                  <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-medium text-gray-900">Total Flow Ratio (TFR)</h4>
+                    <p id="tfr" class="mt-1 text-gray-600"></p>
+                  </div>
+                  <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-medium text-gray-900">Time Average Ratio (TAR)</h4>
+                    <p id="tar" class="mt-1 text-gray-600"></p>
+                  </div>
+                </div>
+
+                <!-- Machine Utilization -->
+                <div class="mb-6">
+                  <h3 class="text-lg font-medium text-gray-900">Machine Utilization</h3>
+                  <div id="machine_utilization" class="mt-2 text-gray-600"></div>
+                </div>
+
+                <!-- Gantt Chart -->
+                <div class="mb-6">
+                  <h3 class="text-lg font-medium text-gray-900">Gantt Chart</h3>
+                  <div id="gantt_chart" class="mt-4"></div>
+                  <p id="gantt_chart_error" class="mt-2 text-red-600 hidden"></p>
+                </div>
+
+                <!-- Export Button -->
+                <button id="export_results" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                  Export Results
+                </button>
+              </div>
             </div>
-        </form>
+          </div>
+        </div>
+      </div>
     </div>
-
-    <!-- Results Section -->
-    <div id="results_section" class="mt-8 bg-white shadow-lg rounded-lg p-6 hidden">
-        <h2 class="text-2xl font-bold mb-6">Scheduling Results</h2>
-        
-        <!-- Job Sequence -->
-        <div class="mb-4">
-            <h3 class="text-lg font-medium text-gray-900">Job Sequence</h3>
-            <p id="job_sequence" class="mt-2 text-gray-600"></p>
-        </div>
-
-        <!-- Performance Metrics -->
-        <div class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div class="bg-gray-50 p-4 rounded-lg">
-                <h4 class="font-medium text-gray-900">Makespan (Cmax)</h4>
-                <p id="makespan" class="mt-1 text-gray-600"></p>
-            </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
-                <h4 class="font-medium text-gray-900">Total Flow Time</h4>
-                <p id="total_flow_time" class="mt-1 text-gray-600"></p>
-            </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
-                <h4 class="font-medium text-gray-900">Average Flow Time</h4>
-                <p id="avg_flow_time" class="mt-1 text-gray-600"></p>
-            </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
-                <h4 class="font-medium text-gray-900">Total Flow Ratio (TFR)</h4>
-                <p id="tfr" class="mt-1 text-gray-600"></p>
-            </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
-                <h4 class="font-medium text-gray-900">Time Average Ratio (TAR)</h4>
-                <p id="tar" class="mt-1 text-gray-600"></p>
-            </div>
-        </div>
-
-        <!-- Machine Utilization -->
-        <div class="mb-6">
-            <h3 class="text-lg font-medium text-gray-900">Machine Utilization</h3>
-            <div id="machine_utilization" class="mt-2 text-gray-600"></div>
-        </div>
-
-        <!-- Gantt Chart -->
-        <div class="mb-6">
-            <h3 class="text-lg font-medium text-gray-900">Gantt Chart</h3>
-            <div id="gantt_chart" class="mt-4"></div>
-            <p id="gantt_chart_error" class="mt-2 text-red-600 hidden"></p>
-        </div>
-
-        <!-- Export Button -->
-        <button id="export_results" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-            Export Results
-        </button>
-    </div>
-</div>
-
-<!-- Loading Spinner -->
-<div id="loading_spinner" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  </section>
+  <!-- Loading Spinner -->
+  <div id="loading_spinner" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white p-6 rounded-lg shadow-xl text-center">
-        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid mx-auto mb-4"></div>
-        <p class="text-lg font-semibold text-gray-700">Generating PDF...</p>
+      <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid mx-auto mb-4"></div>
+      <p class="text-lg font-semibold text-gray-700">Generating PDF...</p>
     </div>
-</div>
+  </div>
 
-<script>
+  <script>
     document.getElementById('export_results').addEventListener('click', async () => {
-        // Show loading indicator
-        const loadingSpinner = document.getElementById('loading_spinner');
-        loadingSpinner.classList.remove('hidden');
+      // Show loading indicator
+      const loadingSpinner = document.getElementById('loading_spinner');
+      loadingSpinner.classList.remove('hidden');
 
-        try {
-            const resultsSection = document.getElementById('results_section');
-            
-            // Wait for any Plotly charts to be fully rendered
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Create instance of jsPDF
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            
-            // Add title
-            pdf.setFontSize(20);
-            pdf.text('Flow Shop Scheduling Results', 105, 15, { align: 'center' });
-            pdf.setFontSize(12);
-            
-            // Add job sequence
-            const jobSequence = document.getElementById('job_sequence').innerText;
-            pdf.text('Job Sequence:', 20, 30);
-            pdf.text(jobSequence, 20, 37);
-            
-            // Add performance metrics
-            pdf.text('Performance Metrics:', 20, 50);
-            const metrics = [
-                ['Makespan (Cmax):', document.getElementById('makespan').innerText],
-                ['Total Flow Time:', document.getElementById('total_flow_time').innerText],
-                ['Average Flow Time:', document.getElementById('avg_flow_time').innerText],
-                ['Total Flow Ratio (TFR):', document.getElementById('tfr').innerText],
-                ['Time Average Ratio (TAR):', document.getElementById('tar').innerText]
-            ];
-            
-            let yPos = 57;
-            metrics.forEach(([label, value]) => {
-                pdf.text(`${label} ${value}`, 25, yPos);
-                yPos += 7;
-            });
-            
-            // Add machine utilization
-            pdf.text('Machine Utilization:', 20, yPos + 10);
-            const utilization = document.getElementById('machine_utilization').innerText;
-            pdf.text(utilization, 25, yPos + 17);
-            
-            // Capture and add Gantt chart
-            const ganttChart = document.getElementById('gantt_chart');
-            if (ganttChart) {
-                const canvas = await html2canvas(ganttChart, {
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff'
-                });
-                
-                const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                
-                // Add new page for Gantt chart
-                pdf.addPage();
-                pdf.text('Gantt Chart:', 20, 20);
-                
-                // Calculate dimensions to fit page while maintaining aspect ratio
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                const pageHeight = pdf.internal.pageSize.getHeight();
-                const margin = 20;
-                const maxWidth = pageWidth - (2 * margin);
-                const maxHeight = pageHeight - (3 * margin);
-                
-                const imgWidth = canvas.width;
-                const imgHeight = canvas.height;
-                
-                let finalWidth = maxWidth;
-                let finalHeight = (imgHeight * maxWidth) / imgWidth;
-                
-                if (finalHeight > maxHeight) {
-                    finalHeight = maxHeight;
-                    finalWidth = (imgWidth * maxHeight) / imgHeight;
-                }
-                
-                const xPos = (pageWidth - finalWidth) / 2;
-                pdf.addImage(imgData, 'JPEG', xPos, 30, finalWidth, finalHeight);
-            }
-            
-            // Save the PDF
-            pdf.save('flow_shop_schedule.pdf');
-            
-        } catch (error) {
-            console.error('Error generating PDF:', error);
-            alert('Error generating PDF. Please try again.');
-        } finally {
-            // Hide loading indicator
-            loadingSpinner.classList.add('hidden');
+      try {
+        const resultsSection = document.getElementById('results_section');
+        
+        // Wait for any Plotly charts to be fully rendered
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Create instance of jsPDF
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        // Add title
+        pdf.setFontSize(20);
+        pdf.text('Flow Shop Scheduling Results', 105, 15, { align: 'center' });
+        pdf.setFontSize(12);
+        
+        // Add job sequence
+        const jobSequence = document.getElementById('job_sequence').innerText;
+        pdf.text('Job Sequence:', 20, 30);
+        pdf.text(jobSequence, 20, 37);
+        
+        // Add performance metrics
+        pdf.text('Performance Metrics:', 20, 50);
+        const metrics = [
+          ['Makespan (Cmax):', document.getElementById('makespan').innerText],
+          ['Total Flow Time:', document.getElementById('total_flow_time').innerText],
+          ['Average Flow Time:', document.getElementById('avg_flow_time').innerText],
+          ['Total Flow Ratio (TFR):', document.getElementById('tfr').innerText],
+          ['Time Average Ratio (TAR):', document.getElementById('tar').innerText]
+        ];
+        
+        let yPos = 57;
+        metrics.forEach(([label, value]) => {
+          pdf.text(`${label} ${value}`, 25, yPos);
+          yPos += 7;
+        });
+        
+        // Add machine utilization
+        pdf.text('Machine Utilization:', 20, yPos + 10);
+        const utilization = document.getElementById('machine_utilization').innerText;
+        pdf.text(utilization, 25, yPos + 17);
+        
+        // Capture and add Gantt chart
+        const ganttChart = document.getElementById('gantt_chart');
+        if (ganttChart) {
+          const canvas = await html2canvas(ganttChart, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff'
+          });
+          
+          const imgData = canvas.toDataURL('image/jpeg', 1.0);
+          
+          // Add new page for Gantt chart
+          pdf.addPage();
+          pdf.text('Gantt Chart:', 20, 20);
+          
+          // Calculate dimensions to fit page while maintaining aspect ratio
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+          const margin = 20;
+          const maxWidth = pageWidth - (2 * margin);
+          const maxHeight = pageHeight - (3 * margin);
+          
+          const imgWidth = canvas.width;
+          const imgHeight = canvas.height;
+          
+          let finalWidth = maxWidth;
+          let finalHeight = (imgHeight * maxWidth) / imgWidth;
+          
+          if (finalHeight > maxHeight) {
+            finalHeight = maxHeight;
+            finalWidth = (imgWidth * maxHeight) / imgHeight;
+          }
+          
+          const xPos = (pageWidth - finalWidth) / 2;
+          pdf.addImage(imgData, 'JPEG', xPos, 30, finalWidth, finalHeight);
         }
+        
+        // Save the PDF
+        pdf.save('flow_shop_schedule.pdf');
+        
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Error generating PDF. Please try again.');
+      } finally {
+        // Hide loading indicator
+        loadingSpinner.classList.add('hidden');
+      }
     });
-</script>
+  </script>
 
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<script src="{{ url_for('static', filename='js/solve.js') }}"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="{{ url_for('static', filename='js/solve.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/flowshop.js') }}"></script>
+</div>
 {% endblock %}

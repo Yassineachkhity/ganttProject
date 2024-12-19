@@ -186,14 +186,14 @@
 
 
 <script>
-    // Initialize AOS
+    
     AOS.init({
         duration: 800,
         once: true,
         offset: 100
     });
 
-    // Counter animation
+    
     const counters = document.querySelectorAll('.counter');
     counters.forEach(counter => {
         const target = parseInt(counter.getAttribute('data-target'));
@@ -210,7 +210,7 @@
             }
         }
 
-        // Start counter animation when element is in view
+       
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
