@@ -41,10 +41,22 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Méthode de résolution</label>
-                                <select id="solve_method" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                    <option value="milp">MILP (Exact)</option>
-                                    <option value="jackson">Jackson (Heuristique)</option>
+                                <select id="solve_method" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="milp">Mixed Integer Linear Programming (MILP)</option>
+                                    <option value="jackson">Jackson's Rule</option>
+                                    <option value="fifo">First In First Out (FIFO)</option>
+                                    <option value="lifo">Last In First Out (LIFO)</option>
+                                    <option value="spt">Shortest Processing Time (SPT)</option>
+                                    <option value="lpt">Longest Processing Time (LPT)</option>
+                                    <option value="edd">Earliest Due Date (EDD)</option>
                                 </select>
+                            </div>
+                            <div id="edd_dates_container" class="hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Due Dates</label>
+                                <div id="due_dates_inputs" class="space-y-2">
+                                    <!-- Due dates inputs will be generated dynamically -->
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -66,41 +78,27 @@
                         </div>
                     </div>
 
-                    <!-- Results Section -->
-                    <div id="results" class="hidden space-y-6 mt-8">
-                        <div class="border-t pt-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Résultats</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="bg-gray-50 rounded-lg p-4">
-                                    <h4 class="text-md font-medium text-gray-700 mb-3">Métriques de Performance</h4>
-                                    <div id="metrics" class="space-y-2">
-                                        <!-- Will be populated with metrics -->
-                                    </div>
-                                </div>
-                                <div class="bg-gray-50 rounded-lg p-4">
-                                    <h4 class="text-md font-medium text-gray-700 mb-3">Diagramme de Gantt</h4>
-                                    <div id="gantt-chart" class="overflow-auto">
-                                        <!-- Will be populated with Gantt chart -->
-                                    </div>
-                                </div>
-                            </div>
+                    <!-- Navigation Buttons -->
+                    <div class="mt-8 flex justify-between">
+                        <button type="button" onclick="prevStep()" 
+                                class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                            Précédent
+                        </button>
+                        <div>
+                            <button type="button" onclick="nextStep()" id="next-btn"
+                                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                Suivant
+                            </button>
+                            <button type="button" onclick="submitJobShop()" id="submit-btn" 
+                                    class="hidden px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                                Résoudre
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Navigation Buttons -->
-                    <div class="flex justify-between mt-8">
-                        <button id="prevBtn" onclick="prevStep()" 
-                                class="hidden px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
-                            Précédent
-                        </button>
-                        <button id="nextBtn" onclick="nextStep()"
-                                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                            Suivant
-                        </button>
-                        <button id="solveBtn" onclick="submitJobShop()" 
-                                class="hidden px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                            Résoudre
-                        </button>
+                    <!-- Results Section -->
+                    <div id="results" class="hidden mt-8">
+                        <!-- Results will be populated dynamically -->
                     </div>
                 </div>
             </div>
@@ -117,6 +115,32 @@ let jobshopData = {
     operations: [],
     solve_method: ''
 };
+
+document.getElementById('solve_method').addEventListener('change', function() {
+    const eddContainer = document.getElementById('edd_dates_container');
+    if (this.value === 'edd') {
+        eddContainer.classList.remove('hidden');
+        generateDueDatesInputs();
+    } else {
+        eddContainer.classList.add('hidden');
+    }
+});
+
+function generateDueDatesInputs() {
+    const container = document.getElementById('due_dates_inputs');
+    const n_jobs = parseInt(document.getElementById('n_jobs').value) || 0;
+    
+    container.innerHTML = '';
+    for (let i = 0; i < n_jobs; i++) {
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.className = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+        input.placeholder = `Due date for Job ${i + 1}`;
+        input.dataset.jobIndex = i;
+        container.appendChild(input);
+    }
+}
 
 function updateProgressBar() {
     const progress = (currentStep / totalSteps) * 100;
@@ -135,12 +159,24 @@ function showStep(step) {
     document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
     document.getElementById(`step${step}`).classList.remove('hidden');
     
-    // Update button visibility
-    document.getElementById('prevBtn').style.display = step === 1 ? 'none' : 'block';
-    document.getElementById('nextBtn').style.display = step === 3 ? 'none' : 'block';
-    document.getElementById('solveBtn').style.display = step === 3 ? 'block' : 'none';
+    document.getElementById('step-text').textContent = `Étape ${step}: ${
+        step === 1 ? 'Configuration Initiale' :
+        step === 2 ? 'Opérations des Jobs' :
+        'Récapitulatif'
+    }`;
+    document.getElementById('progress-text').textContent = `${step}/3`;
+    document.getElementById('progress-bar').style.width = `${(step/3) * 100}%`;
     
-    updateProgressBar();
+    const nextBtn = document.getElementById('next-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    if (step === 3) {
+        nextBtn.classList.add('hidden');
+        submitBtn.classList.remove('hidden');
+    } else {
+        nextBtn.classList.remove('hidden');
+        submitBtn.classList.add('hidden');
+    }
 }
 
 function validateStep1() {
@@ -193,13 +229,30 @@ function generateOperationsForm() {
 
 function validateStep2() {
     for (let i = 0; i < jobshopData.n_jobs; i++) {
-        const machines = document.getElementById(`machine_seq_${i}`).value.split(',').map(Number);
-        const times = document.getElementById(`proc_times_${i}`).value.split(',').map(Number);
+        const machines = document.getElementById(`machine_seq_${i}`).value.split(',').map(x => parseInt(x.trim()));
+        const times = document.getElementById(`proc_times_${i}`).value.split(',').map(x => parseFloat(x.trim()));
         
-        if (machines.length !== times.length || 
-            machines.some(m => m < 1 || m > jobshopData.n_machines) ||
-            times.some(t => t <= 0)) {
-            alert(`Veuillez vérifier les données pour le Job ${i + 1}`);
+        // Check if all values are numbers
+        if (machines.some(isNaN) || times.some(isNaN)) {
+            alert(`Veuillez entrer des nombres valides pour le Job ${i + 1}`);
+            return false;
+        }
+        
+        // Check if lengths match
+        if (machines.length !== times.length) {
+            alert(`Le nombre de machines et de temps de traitement doit être identique pour le Job ${i + 1}`);
+            return false;
+        }
+        
+        // Check if machine numbers are valid (1 to n_machines)
+        if (machines.some(m => m < 1 || m > jobshopData.n_machines)) {
+            alert(`Les numéros de machines doivent être entre 1 et ${jobshopData.n_machines} pour le Job ${i + 1}`);
+            return false;
+        }
+        
+        // Check if processing times are positive
+        if (times.some(t => t <= 0)) {
+            alert(`Les temps de traitement doivent être positifs pour le Job ${i + 1}`);
             return false;
         }
     }
@@ -249,29 +302,48 @@ function prevStep() {
 }
 
 function submitJobShop() {
-    // Collect data
-    jobshopData.operations = [];
-    for (let i = 0; i < jobshopData.n_jobs; i++) {
-        const machines = document.getElementById(`machine_seq_${i}`).value.split(',').map(Number);
-        const times = document.getElementById(`proc_times_${i}`).value.split(',').map(Number);
-        const operations = machines.map((machine, idx) => [machine, times[idx]]);
-        jobshopData.operations.push(operations);
+    const n_jobs = parseInt(document.getElementById('n_jobs').value);
+    const n_machines = parseInt(document.getElementById('n_machines').value);
+    const solve_method = document.getElementById('solve_method').value;
+
+    // Convert operations data from 1-based to 0-based machine indices
+    const operations = [];
+    for (let i = 0; i < n_jobs; i++) {
+        const machines = document.getElementById(`machine_seq_${i}`).value.split(',').map(x => parseInt(x.trim()));
+        const times = document.getElementById(`proc_times_${i}`).value.split(',').map(x => parseFloat(x.trim()));
+        // Convert to 0-based machine indices
+        operations.push(machines.map((m, idx) => [m - 1, times[idx]]));
     }
 
-    // Show loading state
-    document.getElementById('solveBtn').disabled = true;
-    document.getElementById('solveBtn').textContent = 'Calcul en cours...';
+    // Prepare request data
+    const requestData = {
+        n_jobs: n_jobs,
+        n_machines: n_machines,
+        solve_method: solve_method,
+        operations: operations
+    };
 
-    // Send data to server
+    console.log('Submitting data:', requestData);
+
+    // Show loading state
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing...';
+
+    // Make API request
     fetch('/solve_jobshop', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(jobshopData)
+        body: JSON.stringify(requestData)
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.error) {
             throw new Error(data.error);
         }
@@ -279,28 +351,75 @@ function submitJobShop() {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Une erreur est survenue lors de la résolution du problème.');
+        alert('Error: ' + error.message);
     })
     .finally(() => {
-        document.getElementById('solveBtn').disabled = false;
-        document.getElementById('solveBtn').textContent = 'Résoudre';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Résoudre';
     });
 }
 
 function displayResults(data) {
-    document.getElementById('results').classList.remove('hidden');
+    console.log('Displaying results:', data);
     
-    // Display metrics
-    const metricsDiv = document.getElementById('metrics');
-    metricsDiv.innerHTML = `
-        <p class="text-sm text-gray-600"><span class="font-medium">Makespan (Cmax):</span> ${data.metrics.makespan}</p>
-        <p class="text-sm text-gray-600"><span class="font-medium">Temps Total d'Écoulement:</span> ${data.metrics.total_flow_time}</p>
-        <p class="text-sm text-gray-600"><span class="font-medium">Temps Moyen d'Écoulement:</span> ${data.metrics.avg_flow_time.toFixed(2)}</p>
+    // Show the results section
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.classList.remove('hidden');
+    
+    // Create results container
+    resultsDiv.innerHTML = `
+        <div class="border-t pt-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Résultats</h3>
+            
+            <!-- Status -->
+            <div class="mb-4 p-4 bg-blue-50 rounded-lg">
+                <p class="text-blue-700">Status: ${data.status}</p>
+            </div>
+            
+            <!-- Gantt Chart -->
+            <div class="mb-6">
+                <h4 class="text-md font-medium text-gray-700 mb-2">Gantt Chart</h4>
+                ${data.gantt_chart ? `
+                    <img src="data:image/png;base64,${data.gantt_chart}" 
+                         alt="Gantt Chart" 
+                         class="w-full rounded-lg shadow-lg">
+                ` : '<p class="text-red-500">No Gantt chart available</p>'}
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-sm font-medium text-gray-500">Makespan</p>
+                    <p class="mt-1 text-2xl font-semibold text-gray-900">${data.metrics?.makespan?.toFixed(1) || 'N/A'}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-sm font-medium text-gray-500">Average Flow Time</p>
+                    <p class="mt-1 text-2xl font-semibold text-gray-900">${data.metrics?.avg_flow_time?.toFixed(1) || 'N/A'}</p>
+                </div>
+            </div>
+
+            <!-- Machine Utilization -->
+            ${data.metrics?.machine_utilization ? `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="text-md font-medium text-gray-900 mb-3">Machine Utilization</h4>
+                    <div class="space-y-3">
+                        ${Object.entries(data.metrics.machine_utilization).map(([machine, util]) => `
+                            <div class="flex items-center">
+                                <span class="text-sm text-gray-500 w-24">Machine ${parseInt(machine) + 1}</span>
+                                <div class="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-full bg-blue-600 rounded-full" style="width: ${util}%"></div>
+                                </div>
+                                <span class="text-sm text-gray-500 ml-2">${util.toFixed(1)}%</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : '<p class="text-red-500">No machine utilization data available</p>'}
+        </div>
     `;
 
-    // Display Gantt chart
-    const ganttDiv = document.getElementById('gantt-chart');
-    ganttDiv.innerHTML = `<img src="data:image/png;base64,${data.gantt_chart}" alt="Gantt Chart" class="w-full">`;
+    // Scroll to results
+    resultsDiv.scrollIntoView({ behavior: 'smooth' });
 }
 
 // Initialize the form
